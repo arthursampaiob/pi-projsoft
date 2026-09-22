@@ -1,0 +1,33 @@
+name: Verificar infraestrutura
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Testar login no Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Verificar AWS e PostgreSQL
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.AWS_HOST }}
+          username: ubuntu
+          key: ${{ secrets.AWS_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+            docker info > /dev/null
+            docker network inspect rede > /dev/null
+            docker inspect postgres-prova > /dev/null
+            docker exec postgres-prova pg_isready -U curso -d provadb
+            echo "Infraestrutura pronta"
